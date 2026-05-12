@@ -47,3 +47,14 @@ services:
       - "9100:9100"
     pid: host
     restart: always
+  
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    depends_on:
+      - node-exporter
+    restart: always
