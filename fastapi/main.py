@@ -1,10 +1,13 @@
 from fastapi import FastAPI, Request, HTTPException
 import logging
 import time
+from collections import deque
 
 app = FastAPI()
 
-memory_store = []
+memory_store = deque(maxlen=100)
+
+cache = {}
 
 access_logger = logging.getLogger("access_logger")
 error_logger = logging.getLogger("error_logger")
@@ -108,15 +111,32 @@ def slow(request: Request):
 def heavy(request: Request):
     start = time.time()
 
+    if "heavy_result" in cache:
+        response_time = round(time.time() - start, 4)
+
+        write_access_log(request, 200, response_time)
+        access_logger.info("CACHE HIT")
+
+        return {
+            "message": "heavy analytics",
+            "cache": "hit",
+            "response_time": response_time
+        }
+
     result = 0
     for i in range(80_000_000):
         result += i * i
     
+    cache["heavy_result"] = result
+
     response_time = round(time.time() - start, 4)
+
     write_access_log(request, 200, response_time)
+    access_logger.info("CACHE HIT")
 
     return {
         "message": "heavy analytics",
+        "cache": "miss",
         "response_time": response_time
     }
 
@@ -126,6 +146,9 @@ def cache_load(request:Request):
 
     data = "x" * 10_000_000
     memory_store.append(data)
+
+    if len(memory_store) > 100:
+        memory_store.clear()
 
     response_time = round(time.time() - start, 4)
     write_access_log(request, 200, response_time)
