@@ -58,3 +58,12 @@ services:
     depends_on:
       - node-exporter
     restart: always
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+    restart: always
